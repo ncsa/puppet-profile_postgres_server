@@ -1,0 +1,20 @@
+---
+
+profile_postgres_server::groups:
+  postgres:
+    ensure: "present"
+    before: "User[postgres]"
+    forcelocal: true
+    gid: 26
+profile_postgres_server::users:
+  postgres:
+    ensure: "present"
+    comment: "PostgreSQL Server"
+    forcelocal: true
+    gid: 26
+    home: "/var/lib/pgsql"
+    managehome: false
+    password: "!!"
+    purge_ssh_keys: true
+    shell: "/bin/bash"
+    uid: 26
