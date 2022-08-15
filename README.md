@@ -1,117 +1,123 @@
 # profile_postgres_server
 
-Welcome to your new module. A short overview of the generated parts can be found
-in the [PDK documentation][1].
+![pdk-validate](https://github.com/ncsa/puppet-profile_postgres_server/workflows/pdk-validate/badge.svg)
+![yamllint](https://github.com/ncsa/puppet-profile_postgres_server/workflows/yamllint/badge.svg)
 
-The README template below provides a starting point with details about what
-information to include in your README.
+NCSA Common Puppet Profiles - install and configure dependencies and packages for a Postgres server
+
 
 ## Table of Contents
 
 1. [Description](#description)
-1. [Setup - The basics of getting started with profile_postgres_server](#setup)
-    * [What profile_postgres_server affects](#what-profile_postgres_server-affects)
-    * [Setup requirements](#setup-requirements)
-    * [Beginning with profile_postgres_server](#beginning-with-profile_postgres_server)
-1. [Usage - Configuration options and additional functionality](#usage)
-1. [Limitations - OS compatibility, etc.](#limitations)
-1. [Development - Guide for contributing to the module](#development)
+1. [Setup](#setup)
+1. [Usage](#usage)
+1. [Dependencies](#dependencies)
+1. [Reference](#reference)
+
 
 ## Description
 
-Briefly tell users why they might want to use your module. Explain what your
-module does and what kind of problems users can solve with it.
+This puppet profile installs and configures dependencies and packages needed for a Postgres server.
 
-This should be a fairly short description helps the user decide if your module
-is what they want.
 
 ## Setup
 
-### What profile_postgres_server affects **OPTIONAL**
+Include profile_postgres_server in a Puppet role or profile:
+```
+include ::profile_postgres_server
+```
 
-If it's obvious what your module touches, you can skip this section. For
-example, folks can probably figure out that your mysql_instance module affects
-their MySQL instances.
 
-If there's more that they should know about, though, this is the place to
-mention:
+# Usage
 
-* Files, packages, services, or operations that the module will alter, impact,
-  or execute.
-* Dependencies that your module automatically installs.
-* Warnings or other important notices.
+The following parameters likely need to be set for any deployment:
 
-### Setup Requirements **OPTIONAL**
+packages vary by distribution and OS, so if you want Puppet to install them you must list them:
+```yaml
+profile_postgres_server::packages:
+  - "pgbackrest"
+  - "postgresql14"
+  - "postgresql14-contrib"
+  - "postgresql14-libs"
+  - "postgresql14-server"
+  - "python3-psycopg2"
+```
 
-If your module requires anything extra before setting up (pluginsync enabled,
-another module, etc.), mention it here.
+if you need Puppet to define the Yum repo(s) Postgres will be installed from:
+```yaml
+profile_postgres_server::yum_repos:
+  "pgdg-common":
+    descr: "pgdg-common"
+    baseurl: "http://server.com/path/to/pgdg-common/repo"
+    skip_if_unavailable: true
+    gpgcheck: true
+    gpgkey: "http://server.com/path/to/pgdg_gpg_key"
+    repo_gpgcheck: false
+  "pgdg14":
+    descr: "pgdg14"
+    baseurl: "http://server.com/path/to/pgdg14/repo"
+    skip_if_unavailable: true
+    gpgcheck: true
+    gpgkey: "http://server.com/path/to/pgdg_gpg_key"
+    repo_gpgcheck: false
+```
 
-If your most recent release breaks compatibility or requires particular steps
-for upgrading, you might want to include an additional "Upgrading" section here.
+if you want Puppet to start and enable the service:
+```yaml
+profile_postgres_server::services:
+  - "postgresql-14"
+```
 
-### Beginning with profile_postgres_server
+if the DB service needs to be externally accessible:
+```yaml
+profile_postgres_server::client_ips:
+  - "172.0.0.64/26"        # specify a CIDR range or single IP
+  - "172.1.0.2-172.1.0.4"  # specify an IP range
+  - "any"                  # add an iptables rule w/o a source (allow from anywhere)
+```
 
-The very basic steps needed for a user to get the module up and running. This
-can include setup steps, if necessary, or it can be an example of the most basic
-use of the module.
+if there are Puppet resources from other profile/modules that must be ensured prior to installing/starting Postgres:
+```yaml
+profile_postgres_server::other_dependencies:
+  - "Lvm::Logical_volume[data]"
+  - "Mount[/var/lib/pgsql]"
+```
 
-## Usage
+if you want Puppet to manage any crons (e.g., for backups):
+```yaml
+profile_postgres_server::cron_groups:
+  - "postgres"
+## and/or
+profile_postgres_server::cron_users:
+  - "postgres"
 
-Include usage examples for common use cases in the **Usage** section. Show your
-users how to use your module to solve problems, and be sure to include code
-examples. Include three to five examples of the most important or common tasks a
-user can accomplish with your module. Show users how to accomplish more complex
-tasks that involve different types, classes, and functions working in tandem.
+## AND
+
+profile_postgres_server::crons:
+  "cron-command":
+    command: "/path/to/cron-command"
+    environment:
+      - "SHELL=/bin/sh"
+    hour: 1
+    minute: 5
+    month: "*"
+    monthday: "*"
+    weekday: "*"
+    user: "postgres"
+```
+
+if you need to manage any symlinks, e.g., for pgBackRest:
+```yaml
+profile_postgres_server::symlinks:
+  "/etc/pgbackrest.conf":
+    target: "/data/pg-backups/pgbackrest.conf.d/pgbackrest.conf"
+```
+
+## Depencencies
+
+[herculesteam/augeasproviders_sysctl](https://forge.puppet.com/modules/herculesteam/augeasproviders_sysctl) Puppet module
+
 
 ## Reference
 
-This section is deprecated. Instead, add reference information to your code as
-Puppet Strings comments, and then use Strings to generate a REFERENCE.md in your
-module. For details on how to add code comments and generate documentation with
-Strings, see the [Puppet Strings documentation][2] and [style guide][3].
-
-If you aren't ready to use Strings yet, manually create a REFERENCE.md in the
-root of your module directory and list out each of your module's classes,
-defined types, facts, functions, Puppet tasks, task plans, and resource types
-and providers, along with the parameters for each.
-
-For each element (class, defined type, function, and so on), list:
-
-* The data type, if applicable.
-* A description of what the element does.
-* Valid values, if the data type doesn't make it obvious.
-* Default value, if any.
-
-For example:
-
-```
-### `pet::cat`
-
-#### Parameters
-
-##### `meow`
-
-Enables vocalization in your cat. Valid options: 'string'.
-
-Default: 'medium-loud'.
-```
-
-## Limitations
-
-In the Limitations section, list any incompatibilities, known issues, or other
-warnings.
-
-## Development
-
-In the Development section, tell other users the ground rules for contributing
-to your project and how they should submit their work.
-
-## Release Notes/Contributors/Etc. **Optional**
-
-If you aren't using changelog, put your release notes here (though you should
-consider using changelog). You can also add any additional sections you feel are
-necessary or important to include here. Please use the `##` header.
-
-[1]: https://puppet.com/docs/pdk/latest/pdk_generating_modules.html
-[2]: https://puppet.com/docs/puppet/latest/puppet_strings.html
-[3]: https://puppet.com/docs/puppet/latest/puppet_strings_style.html
+See: [REFERENCE.md](REFERENCE.md)

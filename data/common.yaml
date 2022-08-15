@@ -1,1 +1,14 @@
---- {}
+---
+
+profile_postgres_server::client_ips: []
+profile_postgres_server::cron_groups: []
+profile_postgres_server::cron_users: []
+profile_postgres_server::crons: {}
+profile_postgres_server::other_dependencies: []
+profile_postgres_server::packages: []
+profile_postgres_server::ports:
+  - 5432
+profile_postgres_server::services: []
+profile_postgres_server::symlinks: {}
+profile_postgres_server::sysctl_settings: {}
+profile_postgres_server::yum_repos: {}
