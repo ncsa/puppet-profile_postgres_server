@@ -62,6 +62,25 @@ profile_postgres_server::yum_repos:
     repo_gpgcheck: false
 ```
 
+NOTE: if you are trying to install from a non-RHEL source, you'll want to disable the RHEL DNF module:
+```yaml
+profile_additional_packages::pkg_list:
+  "RedHat":
+    "postgresql":
+      ensure: "disabled"
+      provider: "dnfmodule"
+```
+
+if you want to install from a non-default RHEL DNF module you should be able to enable it in a similar fashion,
+e.g., to enable the postgresql v12 module:
+```yaml
+profile_additional_packages::pkg_list:
+  "RedHat":
+    "postgresql:12":             
+      ensure: "enabled"
+      provider: "dnfmodule"
+```
+
 if you want Puppet to start and enable the service:
 ```yaml
 profile_postgres_server::services:
