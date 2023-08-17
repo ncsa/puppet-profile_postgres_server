@@ -67,10 +67,8 @@ class profile_postgres_server (
   Hash           $yum_repos,
 
 ) {
-
   # Set Ad-hoc sysctl settings
-  $sysctl_settings.each | $name, $params |
-  {
+  $sysctl_settings.each | $name, $params | {
     sysctl { $name:
       * => $params,
     }
@@ -78,14 +76,14 @@ class profile_postgres_server (
 
   # Manage local groups
   $groups.each | $name, $data | {
-    group{ $name:
+    group { $name:
       * => $data,
     }
   }
 
   # Manage local users
   $users.each | $name, $data | {
-    user{ $name:
+    user { $name:
       * => $data,
     }
   }
@@ -130,12 +128,12 @@ class profile_postgres_server (
 
   # Manage symlinks
   File {
-    ensure => "link",
-    links  => "manage",
+    ensure => 'link',
+    links  => 'manage',
   }
 
   $symlinks.each | $location, $data | {
-    file{ $location:
+    file { $location:
       * => $data,
     }
   }
@@ -173,11 +171,10 @@ class profile_postgres_server (
   }
 
   Cron {
-    environment => [ 'SHELL=/bin/sh', ],
+    environment => ['SHELL=/bin/sh',],
     require     => $other_dependencies,
   }
   $crons.each | $k, $v | {
     cron { $k: * => $v }
   }
-
 }
