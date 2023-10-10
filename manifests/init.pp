@@ -48,6 +48,26 @@
 # @param yum_repos
 #   Raw data for yumrepo resources to create.
 #
+# @param server_params
+#   Data to pass to class 'postgresql::server'.
+#   Must be a hash with at least the key: postgres_password
+#   See also:
+#   https://github.com/puppetlabs/puppetlabs-postgresql/blob/main/manifests/server.pp
+#
+# @param databases
+#   Data to create databases
+#   Format is Hash, as follows:
+# ```
+# DBNAME:
+#   db_params: Hash of data valid for postgresql::server::database
+#   role_name "username"
+#   role_password "encrypted password"
+#   role_params:
+#     <data suitable for postgresql::server::role>
+#   schema: "schema name"
+# ```
+#   See also: https://github.com/puppetlabs/puppetlabs-postgresql/
+#
 # @example
 #   include profile_postgres_server
 class profile_postgres_server (
@@ -65,6 +85,8 @@ class profile_postgres_server (
   Hash           $sysctl_settings,
   Hash           $users,
   Hash           $yum_repos,
+  Hash           $server_params,
+  Hash           $databases,
 
 ) {
   # Set Ad-hoc sysctl settings
@@ -176,5 +198,41 @@ class profile_postgres_server (
   }
   $crons.each | $k, $v | {
     cron { $k: * => $v }
+  }
+
+  ### Setup databases and users/roles
+  if $server_params =~ Hash[String, Data, 1] {
+    class { 'postgresql::server':
+      * => $server_params,
+    }
+    $databases.each | $dn_name, $v | {
+      postgresql::server::database {
+        $db_name:
+          * => $v['db_params'],
+          ;
+        default:
+          encoding =>  'UNICODE',
+          ;
+      }
+      $pwdhash = postgresql::postgresql_password( $v['role_name'], $v['role_password'] )
+      postgresql::server::role {
+        $v['role_name'] :
+          password_hash => $pwdhash,
+          db            => $db_name,
+          *             => $v['role_params'],
+          ;
+        default:
+          superuser     => true,
+          ;
+      }
+      postgresql::server::grant { $db_name :
+        privilege => 'ALL',
+        db        => $db_name,
+        role      =>  $v['role_name'],
+      }
+      postgresql::server::schema { $v['schema']:
+        db => $db_name,
+      }
+    }
   }
 }
