@@ -12,3 +12,5 @@ profile_postgres_server::services: []
 profile_postgres_server::symlinks: {}
 profile_postgres_server::sysctl_settings: {}
 profile_postgres_server::yum_repos: {}
+profile_postgres_server::server_params: {}
+profile_postgres_server::databases: {}
