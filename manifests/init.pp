@@ -205,7 +205,7 @@ class profile_postgres_server (
     class { 'postgresql::server':
       * => $server_params,
     }
-    $databases.each | $dn_name, $v | {
+    $databases.each | $db_name, $v | {
       postgresql::server::database {
         $db_name:
           * => $v['db_params'],
